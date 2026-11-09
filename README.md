@@ -1,13 +1,13 @@
 # Keepsake
 
-Keepsake is a small, local conversation archive viewer. Load a JSON export to browse messages in a quiet, searchable interface. Filter by platform, person, or date, and scroll through long archives with virtualized message rendering.
+Keepsake is a small, local conversation archive viewer. Load a JSON export to browse messages in a quiet, searchable interface. Filter by platform or person, jump to a date, and scroll through long archives with virtualized message rendering.
 
 ## Features
 
 - Automatically loads `public/chat.json` when the app starts, if the file exists.
 - Open a JSON archive from anywhere on your device with **Open file**.
 - Search message text, sender names, and platform names. Press **⌘K** on macOS or **Ctrl+K** on other platforms to focus search.
-- Filter by platform, sender, and local calendar date. Use **Clear filters** to reset the filters and search.
+- Filter by platform and sender, or jump to the first message on a local calendar date. Use **Clear filters** to reset the filters and search.
 - Virtualizes the filtered message list with TanStack Virtual, rendering only nearby rows and measuring messages as they appear. This keeps long archives responsive while supporting messages with different heights.
 - Switch between light and dark themes; Keepsake remembers your choice in this browser and follows your system theme on first visit.
 - Shows message dates and times in your browser's local timezone.

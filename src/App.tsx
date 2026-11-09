@@ -123,9 +123,8 @@ function App() {
     return messages.map((message, originalIndex) => ({ message, originalIndex }))
       .filter(({ message }) => (activePlatform === 'All platforms' || message.platform === activePlatform)
         && (activeSender === 'All people' || message.sender === activeSender)
-        && (!activeDate || localDateKey(message.timestamp) === activeDate)
         && (!normalizedQuery || `${message.sender} ${message.message} ${message.platform ?? ''}`.toLocaleLowerCase().includes(normalizedQuery)))
-  }, [messages, activePlatform, activeSender, activeDate, query])
+  }, [messages, activePlatform, activeSender, query])
 
   const virtualizer = useVirtualizer({
     count: visibleMessages.length,
@@ -141,6 +140,14 @@ function App() {
   useEffect(() => {
     virtualizer.measure()
   }, [containerWidth, messages, virtualizer])
+
+  useEffect(() => {
+    if (!activeDate) return
+    const targetIndex = visibleMessages.findIndex(({ message }) => localDateKey(message.timestamp) === activeDate)
+    if (targetIndex < 0) return
+    const frame = requestAnimationFrame(() => virtualizer.scrollToIndex(targetIndex, { align: 'start', behavior: 'smooth' }))
+    return () => cancelAnimationFrame(frame)
+  }, [activeDate, visibleMessages, virtualizer])
 
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -198,7 +205,7 @@ function App() {
                 <svg className="filter-icon pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </label>
               <div className="filter-control relative min-w-0">
-                <input ref={dateFilterRef} className="date-filter h-10 w-full rounded-lg border border-line bg-paper py-0 pl-2 pr-9 text-[11px] text-muted outline-none focus:border-terracotta/60 focus:ring-2 focus:ring-terracotta/10 sm:pl-3 sm:text-xs" aria-label="Filter by date" type="date" value={activeDate} onChange={(event) => setActiveDate(event.target.value)} />
+                <input ref={dateFilterRef} className="date-filter h-10 w-full rounded-lg border border-line bg-paper py-0 pl-2 pr-9 text-[11px] text-muted outline-none focus:border-terracotta/60 focus:ring-2 focus:ring-terracotta/10 sm:pl-3 sm:text-xs" aria-label="Jump to date" title="Jump to date" type="date" value={activeDate} onChange={(event) => setActiveDate(event.target.value)} />
                 <button className="filter-icon absolute right-1 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-terracotta" type="button" aria-label="Open date picker" onClick={() => {
                   const input = dateFilterRef.current
                   if (!input) return
