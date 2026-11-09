@@ -4,8 +4,8 @@ Keepsake is a small, local conversation archive viewer. Load a JSON export to br
 
 ## Features
 
-- Automatically loads `public/chat.json` when the app starts, if the file exists.
-- Open a JSON archive from anywhere on your device with **Open file**.
+- Start with an empty archive and open a JSON file from anywhere on your device with **Open file**.
+- Unload the current archive to clear the viewer and return to the empty state.
 - Search message text, sender names, and platform names. Press **⌘K** on macOS or **Ctrl+K** on other platforms to focus search.
 - Filter by platform and sender, or jump to the first message on a local calendar date. Use **Clear filters** to reset the filters and search.
 - Virtualizes the filtered message list with TanStack Virtual, rendering only nearby rows and measuring messages as they appear. This keeps long archives responsive while supporting messages with different heights.
@@ -22,11 +22,24 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite (usually `http://localhost:5173`). To load an archive automatically, put it at `public/chat.json` before starting or refreshing the app. You can also select a JSON file with the **Open file** button while the app is running.
+Open the local URL printed by Vite (usually `http://localhost:5173`), then choose a JSON file with **Open file**. Keepsake starts empty and reads the selected archive in your browser.
 
 ## Chat file format
 
-The file must contain a JSON array. Each message needs a numeric `timestamp` in **milliseconds since the Unix epoch**, a `sender` string, and a `message` string. The optional `platform` field can be `"WhatsApp"` or `"Instagram"`.
+Each file is a JSON array of messages with this TypeScript shape:
+
+```ts
+type ChatMessage = {
+  timestamp: number // milliseconds since the Unix epoch
+  sender: string
+  message: string
+  platform?: string
+}
+
+type ChatFile = ChatMessage[]
+```
+
+`timestamp`, `sender`, and `message` are required. `platform` is optional and can be any string. The labels `"WhatsApp"`, `"Instagram"`, and `"Telegram"` (case-insensitive) receive distinct background colors. Any other label or an empty value uses the default chat background.
 
 ```json
 [
@@ -44,9 +57,9 @@ The file must contain a JSON array. Each message needs a numeric `timestamp` in 
 ]
 ```
 
-Messages are displayed in the order they appear in the array. The viewer does not sort them, so provide the messages in the order you want to browse. Messages whose sender is `"System"` are displayed as centered system events. Messages from `"Sushmita"` are styled on the right side of the conversation.
+Messages are displayed in the order they appear in the array. The viewer does not sort them, so provide the messages in the order you want to browse. Messages whose sender is `"System"` are displayed as centered system events. Other participants are aligned by first appearance: the first participant appears on the left, the second on the right, and additional participants alternate sides. Participant names and initials are read from the message data.
 
-Invalid JSON or entries that do not match the required fields are rejected with an error message. When loading a file from disk, the app reads it in the browser. When using `public/chat.json`, the file is served by the local Vite development server as part of the app; keep private archives out of any public deployment unless you intend to publish them.
+Invalid JSON or entries that do not match the required fields are rejected with an error message. The app reads selected files in the browser; archive contents are not sent to a server.
 
 ## Available commands
 
@@ -68,7 +81,7 @@ Invalid JSON or entries that do not match the required fields are rejected with 
 ## Project structure
 
 ```text
-public/       Static files; put the default archive at public/chat.json
+public/       Static assets
 src/App.tsx   Conversation viewer, loading, search, filters, theme, and virtualized list
 src/index.css Tailwind theme tokens, typography, and message-list texture
 ```

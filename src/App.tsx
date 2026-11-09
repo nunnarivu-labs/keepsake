@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
-type Platform = 'WhatsApp' | 'Instagram'
 type ChatMessage = {
   timestamp: number
   sender: string
-  platform?: Platform
+  platform?: string
   message: string
 }
 
@@ -18,7 +17,7 @@ function isChatMessage(value: unknown): value is ChatMessage {
   const row = value as Record<string, unknown>
   return typeof row.timestamp === 'number' && Number.isFinite(row.timestamp)
     && typeof row.sender === 'string' && typeof row.message === 'string'
-    && (row.platform === undefined || row.platform === 'WhatsApp' || row.platform === 'Instagram')
+    && (row.platform === undefined || typeof row.platform === 'string')
 }
 
 function formatDate(timestamp: number) {
@@ -55,7 +54,7 @@ function App() {
     return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
   })
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [sourceName, setSourceName] = useState('public/chat.json')
+  const [sourceName, setSourceName] = useState('No archive selected')
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [activePlatform, setActivePlatform] = useState('All platforms')
@@ -84,18 +83,6 @@ function App() {
   }, [])
 
   useEffect(() => {
-    let active = true
-    fetch('/chat.json')
-      .then((response) => {
-        if (!response.ok) throw new Error('No chat.json found in the public folder.')
-        return response.json()
-      })
-      .then((rows: unknown) => { if (active) loadRows(rows, 'public/chat.json') })
-      .catch(() => { /* The empty state explains how to add a file. */ })
-    return () => { active = false }
-  }, [loadRows])
-
-  useEffect(() => {
     const node = scrollRef.current
     if (!node) return
     const observer = new ResizeObserver(([entry]) => {
@@ -117,7 +104,8 @@ function App() {
   }, [])
 
   const senders = useMemo(() => [...new Set(messages.map((message) => message.sender))], [messages])
-  const availablePlatforms = useMemo(() => [...new Set(messages.map((message) => message.platform).filter(Boolean))] as Platform[], [messages])
+  const participants = useMemo(() => senders.filter((sender) => sender !== 'System'), [senders])
+  const availablePlatforms = useMemo(() => [...new Set(messages.map((message) => message.platform).filter((platform): platform is string => Boolean(platform?.trim())))], [messages])
   const visibleMessages = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase()
     return messages.map((message, originalIndex) => ({ message, originalIndex }))
@@ -160,6 +148,17 @@ function App() {
     event.target.value = ''
   }
 
+  const unloadChat = () => {
+    setMessages([])
+    setSourceName('No archive selected')
+    setError('')
+    setQuery('')
+    setActivePlatform('All platforms')
+    setActiveSender('All people')
+    setActiveDate('')
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }
+
   const lastActivity = messages.length ? formatDate(messages[messages.length - 1].timestamp) : 'Waiting for your archive'
 
   return (
@@ -172,16 +171,17 @@ function App() {
               <span className="grid size-9 place-items-center rounded-xl bg-terracotta text-white shadow-sm"><svg className="size-5 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.3 4.2 4.2 0 0 1 19.5 10C19.5 15.4 12 20 12 20Z" /></svg></span>
               <span>keepsake<span className="text-terracotta">.</span></span>
             </a>
-            <button className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-xs font-semibold text-muted transition hover:border-terracotta/50 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}><svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" /></svg>Open file</button>
+            {messages.length > 0 && <button className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-xs font-semibold text-muted transition hover:border-terracotta/50 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}><svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" /></svg>Open file</button>}
           </div>
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.18em] text-terracotta"><span className="h-px w-6 bg-terracotta/60" />A little place for your words</div>
           <h1 className="mt-5 mb-3 font-serif text-[clamp(2.65rem,4vw,4rem)] leading-[1.03] tracking-[-.055em] text-ink">Some things<br />are worth <em className="font-medium text-terracotta">keeping.</em></h1>
           <p className="max-w-sm text-sm leading-7 text-muted">Your conversations, gathered in one quiet place. Pick a moment and take your time.</p>
           <div className="mt-8 flex items-center gap-3 rounded-2xl border border-line bg-surface/80 p-3.5 shadow-[0_8px_24px_var(--shadow)]">
             <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-soft text-terracotta"><svg className="size-5 fill-none stroke-current stroke-[1.5]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9.5L13.5 3Z"/><path strokeLinecap="round" strokeLinejoin="round" d="M13 3v7h7M8 14h8M8 17h5"/></svg></span>
-            <span className="min-w-0 flex-1"><strong className="block truncate text-xs font-semibold text-ink">{sourceName}</strong><span className="mt-1 block text-[11px] text-muted">{messages.length ? `${messages.length.toLocaleString()} messages loaded` : 'Your chat file lives here'}</span></span>
+            <span className="min-w-0 flex-1"><strong className="block truncate text-xs font-semibold text-ink">{sourceName}</strong><span className="mt-1 block text-[11px] text-muted">{messages.length ? `${messages.length.toLocaleString()} messages loaded` : 'Choose a JSON file to begin'}</span></span>
             <span className="text-sm font-semibold text-sage">{messages.length ? '✓' : '·'}</span>
           </div>
+          {messages.length > 0 && <button className="mt-3 self-start rounded-md px-1 py-1 text-[11px] font-semibold text-muted underline decoration-line underline-offset-4 transition hover:text-terracotta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={unloadChat}>Unload chat</button>}
           <div className="mt-3 flex items-center gap-2 text-[11px] text-muted"><span className="text-base text-terracotta">◷</span>Times shown in your local timezone</div>
           <div className="mt-8 flex items-center gap-2 lg:mt-auto lg:pt-12"><span className="text-xs text-sage">✳</span><span className="text-[9px] font-semibold tracking-[.16em] text-muted/70">MADE FOR THE MOMENTS IN BETWEEN</span></div>
         </aside>
@@ -189,10 +189,14 @@ function App() {
         <section className="flex h-[min(790px,calc(100svh-40px))] min-h-[580px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_20px_60px_var(--shadow)] sm:h-[min(820px,calc(100svh-56px))]" aria-label="Conversation viewer">
           <div className="flex min-h-[82px] items-center justify-between gap-4 border-b border-line px-4 sm:px-7">
             <div className="flex min-w-0 items-center gap-3.5">
-              <div className="flex shrink-0 pl-1"><span className="grid size-9 place-items-center rounded-full border-2 border-surface bg-[#e8caba] text-xs font-semibold text-[#765e51]">J</span><span className="-ml-2 grid size-9 place-items-center rounded-full border-2 border-surface bg-[#ded0e3] text-xs font-semibold text-[#725f76]">S</span></div>
+              {participants.length > 0 && <div className="flex shrink-0 pl-1">{participants.slice(0, 2).map((participant, index) => <span key={participant} title={participant} aria-label={participant} className={`grid size-9 place-items-center rounded-full border-2 border-surface text-xs font-semibold ${index % 2 ? 'bg-[#ded0e3] text-[#725f76] -ml-2' : 'bg-[#e8caba] text-[#765e51]'}`}>{participant.trim().slice(0, 1).toUpperCase() || '?'}</span>)}{participants.length > 2 && <span className="-ml-2 grid size-9 place-items-center rounded-full border-2 border-surface bg-soft text-[10px] font-semibold text-muted" title={`${participants.length - 2} more participants`}>+{participants.length - 2}</span>}</div>}
               <div className="min-w-0"><h2 className="truncate text-sm font-semibold tracking-tight text-ink">Your conversations</h2><p className="mt-1 truncate text-xs text-muted">{messages.length ? `${messages.length.toLocaleString()} messages · ${lastActivity}` : 'A collection of little moments'}</p></div>
             </div>
-            <div className="hidden shrink-0 items-center gap-4 text-[11px] text-muted sm:flex"><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-sage" />WhatsApp</span><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-lilac" />Instagram</span></div>
+            {availablePlatforms.length > 0 && <div className="hidden shrink-0 items-center gap-4 text-[11px] text-muted sm:flex">{availablePlatforms.map((platform) => {
+              const normalizedPlatform = platform.trim().toLocaleLowerCase()
+              const markerColor = normalizedPlatform === 'whatsapp' ? 'bg-sage' : normalizedPlatform === 'instagram' ? 'bg-lilac' : normalizedPlatform === 'telegram' ? 'bg-telegram' : 'bg-muted'
+              return <span key={platform} className="flex items-center gap-2"><i className={`size-2 rounded-full ${markerColor}`} />{platform}</span>
+            })}</div>}
             <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => setDarkMode((current) => !current)} aria-label={`Switch to ${darkMode ? 'light' : 'dark'} mode`} title={`Switch to ${darkMode ? 'light' : 'dark'} mode`}>
               {darkMode ? <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg> : <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>}
             </button>
@@ -224,10 +228,10 @@ function App() {
             {visibleMessages.length > 0 ? <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const { message } = visibleMessages[virtualRow.index]
-                return <MessageRow key={virtualRow.key} message={message} measureRef={virtualizer.measureElement} index={virtualRow.index} top={virtualRow.start} />
+                return <MessageRow key={virtualRow.key} message={message} participants={participants} measureRef={virtualizer.measureElement} index={virtualRow.index} top={virtualRow.start} />
               })}
-            </div> : <div className="flex min-h-full flex-col items-center justify-center px-6 py-10 text-center">
-              {messages.length ? <><span className="mb-4 grid size-12 place-items-center rounded-full bg-soft text-xl text-terracotta">⌕</span><h3 className="font-serif text-2xl text-ink">No messages found</h3><p className="mt-2 text-xs leading-6 text-muted">Try a different search or filter.</p><button className="mt-3 text-xs font-semibold text-terracotta underline decoration-terracotta/40 underline-offset-4" onClick={() => { setQuery(''); setActivePlatform('All platforms'); setActiveSender('All people'); setActiveDate('') }}>Clear filters</button></> : <><span className="mb-4 grid size-12 place-items-center rounded-full bg-soft text-xl text-terracotta">✳</span><h3 className="font-serif text-2xl text-ink">Your story starts here</h3><p className="mt-2 max-w-sm text-xs leading-6 text-muted">Place your <code className="rounded bg-soft px-1.5 py-1 font-mono text-[11px] text-terracotta">chat.json</code> file in the project’s <code className="rounded bg-soft px-1.5 py-1 font-mono text-[11px] text-terracotta">public/</code> folder, then refresh.</p><p className="mt-1 text-xs text-muted">Or open a file from anywhere on your device.</p><button className="mt-5 inline-flex h-10 items-center gap-3 rounded-lg bg-terracotta px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}>Choose chat.json <span>↗</span></button><div className="mt-4 text-[10px] text-muted">A JSON array of messages · timestamps in milliseconds</div></>}
+            </div> : <div className="flex min-h-full w-full flex-col items-center justify-center px-6 py-10 text-center">
+              {messages.length ? <><span className="mb-4 grid size-12 place-items-center rounded-full bg-soft text-xl text-terracotta">⌕</span><h3 className="font-serif text-2xl text-ink">No messages found</h3><p className="mt-2 text-xs leading-6 text-muted">Try a different search or filter.</p><button className="mt-3 text-xs font-semibold text-terracotta underline decoration-terracotta/40 underline-offset-4" onClick={() => { setQuery(''); setActivePlatform('All platforms'); setActiveSender('All people'); setActiveDate('') }}>Clear filters</button></> : <div className="w-full max-w-md"><span className="mx-auto mb-3 grid size-11 place-items-center rounded-full bg-soft text-xl text-terracotta">✳</span><h3 className="font-serif text-2xl text-ink">Your story starts here</h3><p className="mt-2 text-xs leading-6 text-muted">Choose a JSON file to browse your conversation. Your archive is read in this browser and is not uploaded.</p><button className="mt-4 inline-flex h-10 items-center gap-3 rounded-lg bg-terracotta px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}>Choose a chat file <span>↗</span></button><div className="mt-6 rounded-xl border border-line bg-paper p-4 text-left"><h4 className="text-[10px] font-bold uppercase tracking-[.16em] text-terracotta">Expected JSON format</h4><p className="mt-2 text-[11px] leading-5 text-muted">Use an array of messages. Each needs a numeric <code className="font-mono text-ink">timestamp</code> in milliseconds since the Unix epoch, plus <code className="font-mono text-ink">sender</code> and <code className="font-mono text-ink">message</code> strings. For <code className="font-mono text-ink">platform</code>, use <code className="font-mono text-ink">"WhatsApp"</code>, <code className="font-mono text-ink">"Instagram"</code>, or <code className="font-mono text-ink">"Telegram"</code> for distinct colors (case-insensitive). Other or blank values use the default background.</p><pre className="mt-3 overflow-x-auto rounded-lg bg-soft p-3 font-mono text-[10px] leading-5 text-ink">{`[\n  {\n    "timestamp": 1735689600000,\n    "sender": "Jordan",\n    "platform": "WhatsApp",\n    "message": "Hello!"\n  }\n]`}</pre></div></div>}
             </div>}
           </div>
           <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-t border-line bg-surface px-3 text-[10px] text-muted sm:px-5 sm:text-[11px]"><span className="flex items-center gap-2"><i className="text-sm not-italic text-sage">⌑</i>A private little archive</span><span>{visibleMessages.length.toLocaleString()} {visibleMessages.length === 1 ? 'message' : 'messages'}<span className="mx-2 text-muted/50">·</span>Scroll to wander</span></div>
@@ -237,15 +241,18 @@ function App() {
   )
 }
 
-function MessageRow({ message, measureRef, index, top }: { message: ChatMessage, measureRef: (node: HTMLDivElement | null) => void, index: number, top: number }) {
+function MessageRow({ message, participants, measureRef, index, top }: { message: ChatMessage, participants: string[], measureRef: (node: HTMLDivElement | null) => void, index: number, top: number }) {
   const isSystem = message.sender === 'System'
-  const platformClass = message.platform === 'Instagram' ? 'instagram' : message.platform === 'WhatsApp' ? 'whatsapp' : 'neutral'
-  const isRightSide = message.sender.toLowerCase() === 'sushmita'
-  const tone = platformClass === 'instagram' ? 'border-lilac/30 bg-lilac/5' : platformClass === 'whatsapp' ? 'border-sage/35 bg-sage/5' : 'border-line bg-surface'
+  const normalizedPlatform = message.platform?.trim().toLocaleLowerCase()
+  const platformClass = normalizedPlatform === 'instagram' ? 'instagram' : normalizedPlatform === 'whatsapp' ? 'whatsapp' : normalizedPlatform === 'telegram' ? 'telegram' : 'neutral'
+  const participantIndex = participants.indexOf(message.sender)
+  const isRightSide = participantIndex >= 0 && participantIndex % 2 === 1
+  const senderAvatarTone = participantIndex % 2 ? 'bg-[#ded0e3] text-[#725f76]' : 'bg-[#e8caba] text-[#765e51]'
+  const tone = platformClass === 'instagram' ? 'border-lilac/30 bg-lilac/5' : platformClass === 'whatsapp' ? 'border-sage/35 bg-sage/5' : platformClass === 'telegram' ? 'border-telegram/30 bg-telegram/5' : 'border-line bg-surface'
   return <article ref={measureRef} data-index={index} className={`absolute left-0 right-0 flex items-start gap-2.5 px-3 pb-3 sm:px-6 ${isRightSide ? 'flex-row-reverse justify-start' : ''} ${isSystem ? 'justify-center pt-2' : ''}`} style={{ transform: `translateY(${top}px)` }}>
-    {!isSystem && <div className={`mt-5 grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-bold ${message.sender.toLowerCase() === 'sushmita' ? 'bg-[#ded0e3] text-[#725f76]' : 'bg-[#e8caba] text-[#765e51]'}`}>{message.sender.slice(0, 1).toUpperCase()}</div>}
+    {!isSystem && <div className={`mt-5 grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-bold ${senderAvatarTone}`}>{message.sender.trim().slice(0, 1).toUpperCase() || '?'}</div>}
     <div className={`min-w-0 max-w-[78%] ${isSystem ? 'max-w-[90%]' : ''}`}>
-      <div className={`mb-1.5 flex items-center gap-2 px-1 text-[11px] ${isRightSide ? 'justify-end' : ''} ${isSystem ? 'hidden' : ''}`}><strong className="font-semibold text-muted">{message.sender}</strong>{message.platform && <span className={`rounded-full px-2 py-0.5 text-[9px] font-medium ${platformClass === 'instagram' ? 'bg-lilac/15 text-lilac' : platformClass === 'whatsapp' ? 'bg-sage/15 text-sage' : 'bg-soft text-muted'}`}>{message.platform}</span>}</div>
+      <div className={`mb-1.5 flex items-center gap-2 px-1 text-[11px] ${isRightSide ? 'justify-end' : ''} ${isSystem ? 'hidden' : ''}`}><strong className="font-semibold text-muted">{message.sender}</strong>{message.platform?.trim() && <span className={`rounded-full px-2 py-0.5 text-[9px] font-medium ${platformClass === 'instagram' ? 'bg-lilac/15 text-lilac' : platformClass === 'whatsapp' ? 'bg-sage/15 text-sage' : platformClass === 'telegram' ? 'bg-telegram/15 text-telegram' : 'bg-soft text-muted'}`}>{message.platform}</span>}</div>
       <div className={`rounded-xl border px-3.5 py-3 shadow-[0_2px_8px_var(--shadow)] ${tone} ${isSystem ? 'rounded-lg text-center' : isRightSide ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}><p className={`m-0 whitespace-pre-wrap break-words text-[13px] leading-[1.65] ${isSystem ? 'text-muted' : 'text-ink'}`}>{message.message}</p><time className={`mt-2 block text-right text-[10px] text-muted/75 ${isSystem ? 'text-center' : ''}`} dateTime={new Date(message.timestamp).toISOString()}>{formatDate(message.timestamp)} <span className="px-0.5 text-muted/50">·</span> {formatTime(message.timestamp)}</time></div>
     </div>
     {isSystem && <span className="absolute left-1/2 -mt-1 -translate-x-1/2 text-[10px] text-terracotta/60">✳</span>}

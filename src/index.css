@@ -15,6 +15,7 @@
   --color-terracotta: #c7846e;
   --color-sage: #7eaa87;
   --color-lilac: #b47daf;
+  --color-telegram: #329bd6;
 }
 
 :root {
@@ -42,6 +43,7 @@
   --color-terracotta: #e3a087;
   --color-sage: #91b99b;
   --color-lilac: #c49ac1;
+  --color-telegram: #63b9ee;
 }
 
 * { box-sizing: border-box; }
