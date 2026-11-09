@@ -4,7 +4,7 @@ Keepsake is a small, local conversation archive viewer. Load a JSON export to br
 
 <img width="1382" height="817" alt="Screenshot 2026-11-09 at 22 07 38" src="https://github.com/user-attachments/assets/673e2790-e77c-4a07-8c7f-40a3674095bb" />
 
-<img width="1386" height="816" alt="Screenshot 2026-11-09 at 22 07 50" src="https://github.com/user-attachments/assets/c896ee77-2d3a-47de-9728-c072abd673f8" />
+<img width="1380" height="813" alt="Screenshot 2026-11-09 at 22 10 12" src="https://github.com/user-attachments/assets/acb7895d-d252-4aa9-a50f-e52fd5f722fd" />
 
 ## Features
 
