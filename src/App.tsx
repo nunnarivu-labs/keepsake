@@ -204,7 +204,7 @@ function App() {
           <div className="mt-8 flex items-center gap-2 lg:mt-auto lg:pt-12"><span className="text-xs text-sage">✳</span><span className="text-[9px] font-semibold tracking-[.16em] text-muted/70">MADE FOR THE MOMENTS IN BETWEEN</span></div>
         </aside>
 
-        <section className="flex h-[min(790px,calc(100svh-40px))] min-h-[580px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_20px_60px_var(--shadow)] sm:h-[min(820px,calc(100svh-56px))]" aria-label="Conversation viewer">
+        {messages.length > 0 && <section className="flex h-[min(790px,calc(100svh-40px))] min-h-[580px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_20px_60px_var(--shadow)] sm:h-[min(820px,calc(100svh-56px))]" aria-label="Conversation viewer">
           <div className="flex min-h-[82px] items-center justify-between gap-4 border-b border-line px-4 sm:px-7">
             <div className="flex min-w-0 items-center gap-3.5">
               {participants.length > 0 && <div className="flex shrink-0 pl-1">{participants.slice(0, 2).map((participant, index) => <span key={participant} title={participant} aria-label={participant} className={`grid size-9 place-items-center rounded-full border-2 border-surface text-xs font-semibold ${index % 2 ? 'bg-[#ded0e3] text-[#725f76] -ml-2' : 'bg-[#e8caba] text-[#765e51]'}`}>{participant.trim().slice(0, 1).toUpperCase() || '?'}</span>)}{participants.length > 2 && <span className="-ml-2 grid size-9 place-items-center rounded-full border-2 border-surface bg-soft text-[10px] font-semibold text-muted" title={`${participants.length - 2} more participants`}>+{participants.length - 2}</span>}</div>}
@@ -253,7 +253,21 @@ function App() {
             </div>}
           </div>
           <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-t border-line bg-surface px-3 text-[10px] text-muted sm:px-5 sm:text-[11px]"><span className="flex items-center gap-2"><i className="text-sm not-italic text-sage">⌑</i>A private little archive</span><span>{visibleMessages.length.toLocaleString()} {visibleMessages.length === 1 ? 'message' : 'messages'}<span className="mx-2 text-muted/50">·</span>Scroll to wander</span></div>
-        </section>
+        </section>}
+        {messages.length === 0 && <section className="flex min-h-[420px] flex-col lg:min-h-[calc(100svh-56px)]" aria-label="Get started">
+          <div className="flex justify-end">
+            <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => setThemePreference(nextThemePreference)} aria-label={`Theme: ${themeLabel}. Switch to ${nextThemePreference} theme`} title={`Theme: ${themeLabel} · Click for ${nextThemePreference}`}>
+              {darkMode ? <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg> : <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>}
+            </button>
+          </div>
+          <div className="flex flex-1 items-center justify-center py-8 lg:py-4">
+            <div className="w-full max-w-xl">
+              {error && <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs leading-5 text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200" role="alert">{error}</div>}
+              <div className="mb-5 text-center"><span className="mx-auto mb-3 grid size-11 place-items-center rounded-full bg-soft text-xl text-terracotta">✳</span><h2 className="font-serif text-2xl text-ink">Your story starts here</h2><p className="mx-auto mt-2 max-w-md text-xs leading-6 text-muted">Choose a JSON file to browse your conversation. Your archive is read in this browser and is not uploaded.</p><button className="mt-4 inline-flex h-10 items-center gap-3 rounded-lg bg-terracotta px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}>Choose a chat file <span>↗</span></button></div>
+              <div className="rounded-xl border border-line bg-surface p-4 text-left shadow-[0_8px_24px_var(--shadow)]"><h3 className="text-[10px] font-bold uppercase tracking-[.16em] text-terracotta">Expected JSON format</h3><p className="mt-2 text-[11px] leading-5 text-muted">Use an array of messages. Each needs a numeric <code className="font-mono text-ink">timestamp</code> in milliseconds since the Unix epoch, plus <code className="font-mono text-ink">sender</code> and <code className="font-mono text-ink">message</code> strings. For <code className="font-mono text-ink">platform</code>, use <code className="font-mono text-ink">"WhatsApp"</code>, <code className="font-mono text-ink">"Instagram"</code>, or <code className="font-mono text-ink">"Telegram"</code> for distinct colors (case-insensitive). Other or blank values use the default background.</p><pre className="mt-3 overflow-x-auto rounded-lg bg-soft p-3 font-mono text-[10px] leading-5 text-ink">{`[\n  {\n    "timestamp": 1735689600000,\n    "sender": "Jordan",\n    "platform": "WhatsApp",\n    "message": "Hello!"\n  }\n]`}</pre></div>
+            </div>
+          </div>
+        </section>}
       </section>
     </main>
   )
