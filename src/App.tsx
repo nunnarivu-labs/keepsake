@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ChangeEvent, UIEvent } from 'react'
+import type { ChangeEvent } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 
 type Platform = 'WhatsApp' | 'Instagram'
 type ChatMessage = {
@@ -60,10 +61,7 @@ function App() {
   const [activePlatform, setActivePlatform] = useState('All platforms')
   const [activeSender, setActiveSender] = useState('All people')
   const [activeDate, setActiveDate] = useState('')
-  const [containerHeight, setContainerHeight] = useState(0)
   const [containerWidth, setContainerWidth] = useState(900)
-  const [scrollTop, setScrollTop] = useState(0)
-  const [measurements, setMeasurements] = useState<Map<number, number>>(() => new Map())
   const scrollRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const dateFilterRef = useRef<HTMLInputElement>(null)
@@ -81,8 +79,6 @@ function App() {
     }
     setMessages(rows)
     setSourceName(name)
-    setMeasurements(new Map())
-    setScrollTop(0)
     setError('')
     if (scrollRef.current) scrollRef.current.scrollTop = 0
   }, [])
@@ -103,16 +99,11 @@ function App() {
     const node = scrollRef.current
     if (!node) return
     const observer = new ResizeObserver(([entry]) => {
-      setContainerHeight(entry.contentRect.height)
       setContainerWidth(entry.contentRect.width)
     })
     observer.observe(node)
     return () => observer.disconnect()
   }, [])
-
-  useEffect(() => {
-    setMeasurements(new Map())
-  }, [containerWidth])
 
   useEffect(() => {
     const onShortcut = (event: KeyboardEvent) => {
@@ -136,43 +127,20 @@ function App() {
         && (!normalizedQuery || `${message.sender} ${message.message} ${message.platform ?? ''}`.toLocaleLowerCase().includes(normalizedQuery)))
   }, [messages, activePlatform, activeSender, activeDate, query])
 
-  const offsets = useMemo(() => {
-    const result = new Array<number>(visibleMessages.length)
-    let total = 0
-    visibleMessages.forEach(({ message, originalIndex }, index) => {
-      result[index] = total
-      total += measurements.get(originalIndex) ?? estimateHeight(message, containerWidth)
-    })
-    return { positions: result, total }
-  }, [visibleMessages, measurements, containerWidth])
+  const virtualizer = useVirtualizer({
+    count: visibleMessages.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: (index) => estimateHeight(visibleMessages[index].message, containerWidth),
+    getItemKey: (index) => {
+      const { message, originalIndex } = visibleMessages[index]
+      return `${originalIndex}-${message.timestamp}`
+    },
+    overscan: OVERSCAN,
+  })
 
-  const startIndex = useMemo(() => {
-    let low = 0
-    let high = offsets.positions.length
-    const target = Math.max(0, scrollTop - 320)
-    while (low < high) {
-      const mid = (low + high) >>> 1
-      if (offsets.positions[mid] < target) low = mid + 1
-      else high = mid
-    }
-    return Math.max(0, low - OVERSCAN)
-  }, [offsets.positions, scrollTop])
-
-  const endIndex = useMemo(() => {
-    const target = scrollTop + containerHeight + 420
-    let index = startIndex
-    while (index < visibleMessages.length && offsets.positions[index] < target) index += 1
-    return Math.min(visibleMessages.length, index + OVERSCAN)
-  }, [containerHeight, offsets.positions, scrollTop, startIndex, visibleMessages.length])
-
-  const measureRow = useCallback((originalIndex: number, height: number) => {
-    setMeasurements((current) => {
-      if (Math.abs((current.get(originalIndex) ?? 0) - height) < 1) return current
-      const next = new Map(current)
-      next.set(originalIndex, height)
-      return next
-    })
-  }, [])
+  useEffect(() => {
+    virtualizer.measure()
+  }, [containerWidth, messages, virtualizer])
 
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -185,7 +153,6 @@ function App() {
     event.target.value = ''
   }
 
-  const handleScroll = (event: UIEvent<HTMLDivElement>) => setScrollTop(event.currentTarget.scrollTop)
   const lastActivity = messages.length ? formatDate(messages[messages.length - 1].timestamp) : 'Waiting for your archive'
 
   return (
@@ -246,11 +213,11 @@ function App() {
             </div>
           </div>
           {error && <div className="border-b border-red-200 bg-red-50 px-5 py-3 text-xs leading-5 text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200" role="alert">{error}</div>}
-          <div className="message-list min-h-0 flex-1 overflow-auto overscroll-contain" ref={scrollRef} onScroll={handleScroll}>
-            {visibleMessages.length > 0 ? <div className="relative w-full" style={{ height: offsets.total }}>
-              {visibleMessages.slice(startIndex, endIndex).map(({ message, originalIndex }, index) => {
-                const virtualIndex = startIndex + index
-                return <MessageRow key={`${originalIndex}-${message.timestamp}`} message={message} top={offsets.positions[virtualIndex]} onMeasure={(height) => measureRow(originalIndex, height)} />
+          <div className="message-list min-h-0 flex-1 overflow-auto overscroll-contain" ref={scrollRef}>
+            {visibleMessages.length > 0 ? <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const { message } = visibleMessages[virtualRow.index]
+                return <MessageRow key={virtualRow.key} message={message} measureRef={virtualizer.measureElement} index={virtualRow.index} top={virtualRow.start} />
               })}
             </div> : <div className="flex min-h-full flex-col items-center justify-center px-6 py-10 text-center">
               {messages.length ? <><span className="mb-4 grid size-12 place-items-center rounded-full bg-soft text-xl text-terracotta">⌕</span><h3 className="font-serif text-2xl text-ink">No messages found</h3><p className="mt-2 text-xs leading-6 text-muted">Try a different search or filter.</p><button className="mt-3 text-xs font-semibold text-terracotta underline decoration-terracotta/40 underline-offset-4" onClick={() => { setQuery(''); setActivePlatform('All platforms'); setActiveSender('All people'); setActiveDate('') }}>Clear filters</button></> : <><span className="mb-4 grid size-12 place-items-center rounded-full bg-soft text-xl text-terracotta">✳</span><h3 className="font-serif text-2xl text-ink">Your story starts here</h3><p className="mt-2 max-w-sm text-xs leading-6 text-muted">Place your <code className="rounded bg-soft px-1.5 py-1 font-mono text-[11px] text-terracotta">chat.json</code> file in the project’s <code className="rounded bg-soft px-1.5 py-1 font-mono text-[11px] text-terracotta">public/</code> folder, then refresh.</p><p className="mt-1 text-xs text-muted">Or open a file from anywhere on your device.</p><button className="mt-5 inline-flex h-10 items-center gap-3 rounded-lg bg-terracotta px-4 text-xs font-semibold text-white shadow-sm transition hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}>Choose chat.json <span>↗</span></button><div className="mt-4 text-[10px] text-muted">A JSON array of messages · timestamps in milliseconds</div></>}
@@ -263,21 +230,12 @@ function App() {
   )
 }
 
-function MessageRow({ message, top, onMeasure }: { message: ChatMessage, top: number, onMeasure: (height: number) => void }) {
-  const rowRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const node = rowRef.current
-    if (!node) return
-    const observer = new ResizeObserver(() => onMeasure(node.getBoundingClientRect().height))
-    observer.observe(node)
-    onMeasure(node.getBoundingClientRect().height)
-    return () => observer.disconnect()
-  }, [onMeasure])
+function MessageRow({ message, measureRef, index, top }: { message: ChatMessage, measureRef: (node: HTMLDivElement | null) => void, index: number, top: number }) {
   const isSystem = message.sender === 'System'
   const platformClass = message.platform === 'Instagram' ? 'instagram' : message.platform === 'WhatsApp' ? 'whatsapp' : 'neutral'
   const isRightSide = message.sender.toLowerCase() === 'sushmita'
   const tone = platformClass === 'instagram' ? 'border-lilac/30 bg-lilac/5' : platformClass === 'whatsapp' ? 'border-sage/35 bg-sage/5' : 'border-line bg-surface'
-  return <article ref={rowRef} className={`absolute left-0 right-0 flex items-start gap-2.5 px-3 pb-3 sm:px-6 ${isRightSide ? 'flex-row-reverse justify-start' : ''} ${isSystem ? 'justify-center pt-2' : ''}`} style={{ top }}>
+  return <article ref={measureRef} data-index={index} className={`absolute left-0 right-0 flex items-start gap-2.5 px-3 pb-3 sm:px-6 ${isRightSide ? 'flex-row-reverse justify-start' : ''} ${isSystem ? 'justify-center pt-2' : ''}`} style={{ transform: `translateY(${top}px)` }}>
     {!isSystem && <div className={`mt-5 grid size-7 shrink-0 place-items-center rounded-full text-[10px] font-bold ${message.sender.toLowerCase() === 'sushmita' ? 'bg-[#ded0e3] text-[#725f76]' : 'bg-[#e8caba] text-[#765e51]'}`}>{message.sender.slice(0, 1).toUpperCase()}</div>}
     <div className={`min-w-0 max-w-[78%] ${isSystem ? 'max-w-[90%]' : ''}`}>
       <div className={`mb-1.5 flex items-center gap-2 px-1 text-[11px] ${isRightSide ? 'justify-end' : ''} ${isSystem ? 'hidden' : ''}`}><strong className="font-semibold text-muted">{message.sender}</strong>{message.platform && <span className={`rounded-full px-2 py-0.5 text-[9px] font-medium ${platformClass === 'instagram' ? 'bg-lilac/15 text-lilac' : platformClass === 'whatsapp' ? 'bg-sage/15 text-sage' : 'bg-soft text-muted'}`}>{message.platform}</span>}</div>
