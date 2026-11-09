@@ -8,6 +8,7 @@ Keepsake is a small, local conversation archive viewer. Load a JSON export to br
 - Open a JSON archive from anywhere on your device with **Open file**.
 - Search message text, sender names, and platform names. Press **⌘K** on macOS or **Ctrl+K** on other platforms to focus search.
 - Filter by platform, sender, and local calendar date. Use **Clear filters** to reset the filters and search.
+- Switch between light and dark themes; Keepsake remembers your choice in this browser and follows your system theme on first visit.
 - Shows message dates and times in your browser's local timezone.
 - Runs in the browser; the app does not send archive contents to a server.
 
@@ -58,6 +59,7 @@ Invalid JSON or entries that do not match the required fields are rejected with 
 ## Tech stack
 
 - React 19 and TypeScript
+- Tailwind CSS 4 for styling
 - Vite for development and production builds
 - Oxlint for linting
 
@@ -65,7 +67,6 @@ Invalid JSON or entries that do not match the required fields are rejected with 
 
 ```text
 public/       Static files; put the default archive at public/chat.json
-src/App.tsx   Conversation viewer, loading, search, filters, and virtualized list
-src/App.css   Viewer layout and responsive styles
-src/index.css Global styles and typography
+src/App.tsx   Conversation viewer, loading, search, filters, theme, and virtualized list
+src/index.css Tailwind theme tokens, typography, and message-list texture
 ```

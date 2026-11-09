@@ -1,20 +1,73 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --color-paper: #f5f2ed;
+  --color-surface: #fffdfa;
+  --color-ink: #403739;
+  --color-muted: #928782;
+  --color-line: #e8e2dc;
+  --color-soft: #f3e8df;
+  --color-terracotta: #c7846e;
+  --color-sage: #7eaa87;
+  --color-lilac: #b47daf;
+}
 
 :root {
-  font-family: 'DM Sans', sans-serif;
-  color: #342f30;
-  background: #f5f2ed;
+  font-family: var(--font-sans);
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-optical-sizing: auto;
   font-weight: 400;
-  font-size: 14px;
+  background: #f5f2ed;
+  --shadow: rgba(65, 49, 41, 0.08);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --shadow: rgba(0, 0, 0, 0.25);
+  --color-paper: #171718;
+  --color-surface: #212122;
+  --color-ink: #f1e9e3;
+  --color-muted: #b1a6a0;
+  --color-line: #393536;
+  --color-soft: #382e2c;
+  --color-terracotta: #e3a087;
+  --color-sage: #91b99b;
+  --color-lilac: #c49ac1;
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
+html { min-width: 320px; min-height: 100%; background: var(--color-paper); }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
-::selection { background: #edd4c2; }
+::selection { background: #edd4c2; color: #342f30; }
+
+.filter-control { display: block; }
+.date-filter::-webkit-calendar-picker-indicator { opacity: 0; width: 1rem; height: 1rem; cursor: pointer; }
+
+.message-list {
+  background-color: #fbf8f4;
+  background-image: radial-gradient(#e7dbd1 0.65px, transparent 0.65px);
+  background-size: 19px 19px;
+  scrollbar-color: #c9bbb0 transparent;
+  scrollbar-width: thin;
+}
+
+[data-theme='dark'] .message-list {
+  background-color: #1b1a1b;
+  background-image: radial-gradient(#383132 0.65px, transparent 0.65px);
+  scrollbar-color: #5d5150 transparent;
+}
+
+@media (max-width: 639px) {
+  .message-list { background-size: 17px 17px; }
+}
