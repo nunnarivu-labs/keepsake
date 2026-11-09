@@ -9,7 +9,7 @@ Keepsake is a small, local conversation archive viewer. Load a JSON export to br
 - Search message text, sender names, and platform names. Press **⌘K** on macOS or **Ctrl+K** on other platforms to focus search.
 - Filter by platform and sender, or jump to the first message on a local calendar date. Use **Clear filters** to reset the filters and search.
 - Virtualizes the filtered message list with TanStack Virtual, rendering only nearby rows and measuring messages as they appear. This keeps long archives responsive while supporting messages with different heights.
-- Switch between light and dark themes; Keepsake remembers your choice in this browser and follows your system theme on first visit.
+- Choose System, Light, or Dark themes. System mode follows your device preference and updates when it changes; Keepsake remembers your setting in this browser.
 - Shows message dates and times in your browser's local timezone.
 - Runs in the browser; the app does not send archive contents to a server.
 

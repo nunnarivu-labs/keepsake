@@ -11,6 +11,12 @@ type ChatMessage = {
 
 const ROW_GAP = 12
 const OVERSCAN = 8
+type ThemePreference = 'system' | 'light' | 'dark'
+
+function getSavedThemePreference(): ThemePreference {
+  const saved = localStorage.getItem('keepsake-theme')
+  return saved === 'light' || saved === 'dark' ? saved : 'system'
+}
 
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== 'object') return false
@@ -49,10 +55,11 @@ function estimateHeight(message: ChatMessage, width: number) {
 }
 
 function App() {
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('keepsake-theme')
-    return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
-  })
+  const [themePreference, setThemePreference] = useState<ThemePreference>(getSavedThemePreference)
+  const [systemDarkMode, setSystemDarkMode] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches)
+  const darkMode = themePreference === 'system' ? systemDarkMode : themePreference === 'dark'
+  const nextThemePreference: ThemePreference = themePreference === 'system' ? 'light' : themePreference === 'light' ? 'dark' : 'system'
+  const themeLabel = themePreference === 'system' ? `System (${darkMode ? 'dark' : 'light'})` : themePreference === 'dark' ? 'Dark' : 'Light'
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sourceName, setSourceName] = useState('No archive selected')
   const [error, setError] = useState('')
@@ -68,8 +75,19 @@ function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
-    localStorage.setItem('keepsake-theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
+
+  useEffect(() => {
+    localStorage.setItem('keepsake-theme', themePreference)
+  }, [themePreference])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const updateSystemTheme = (event: MediaQueryListEvent) => setSystemDarkMode(event.matches)
+    setSystemDarkMode(mediaQuery.matches)
+    mediaQuery.addEventListener('change', updateSystemTheme)
+    return () => mediaQuery.removeEventListener('change', updateSystemTheme)
+  }, [])
 
   const loadRows = useCallback((rows: unknown, name: string) => {
     if (!Array.isArray(rows) || !rows.every(isChatMessage)) {
@@ -197,7 +215,7 @@ function App() {
               const markerColor = normalizedPlatform === 'whatsapp' ? 'bg-sage' : normalizedPlatform === 'instagram' ? 'bg-lilac' : normalizedPlatform === 'telegram' ? 'bg-telegram' : 'bg-muted'
               return <span key={platform} className="flex items-center gap-2"><i className={`size-2 rounded-full ${markerColor}`} />{platform}</span>
             })}</div>}
-            <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => setDarkMode((current) => !current)} aria-label={`Switch to ${darkMode ? 'light' : 'dark'} mode`} title={`Switch to ${darkMode ? 'light' : 'dark'} mode`}>
+            <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => setThemePreference(nextThemePreference)} aria-label={`Theme: ${themeLabel}. Switch to ${nextThemePreference} theme`} title={`Theme: ${themeLabel} · Click for ${nextThemePreference}`}>
               {darkMode ? <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg> : <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>}
             </button>
           </div>
