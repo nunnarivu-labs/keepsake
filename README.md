@@ -3,7 +3,7 @@
 Keepsake is a small, local conversation archive viewer. Load a JSON export to browse messages in a quiet, searchable interface. Filter by platform or person, jump to a date, and scroll through long archives with virtualized message rendering.
 
 <img width="1382" height="817" alt="Screenshot 2026-11-09 at 22 07 38" src="https://github.com/user-attachments/assets/673e2790-e77c-4a07-8c7f-40a3674095bb" />
-
+<br><br>
 <img width="1380" height="813" alt="Screenshot 2026-11-09 at 22 10 12" src="https://github.com/user-attachments/assets/acb7895d-d252-4aa9-a50f-e52fd5f722fd" />
 
 ## Features
@@ -18,7 +18,7 @@ Keepsake is a small, local conversation archive viewer. Load a JSON export to br
 - Runs in the browser; the app does not send archive contents to a server.
 
 <img width="1386" height="822" alt="Screenshot 2026-11-09 at 21 54 28" src="https://github.com/user-attachments/assets/901a3070-a11b-4a3b-bc0b-0f5dda11c88c" />
-
+<br><br>
 <img width="1382" height="820" alt="Screenshot 2026-11-09 at 21 55 27" src="https://github.com/user-attachments/assets/854ea184-c77e-4ad1-b3da-c50cd3824782" />
 
 ## Getting started
