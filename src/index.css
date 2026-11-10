@@ -54,7 +54,7 @@
 
 * { box-sizing: border-box; }
 html { min-width: 320px; min-height: 100%; background: var(--color-paper); }
-body { min-width: 320px; min-height: 100vh; margin: 0; }
+body { min-width: 320px; min-height: 100dvh; margin: 0; }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 ::selection { background: #edd4c2; color: #342f30; }
