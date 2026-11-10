@@ -58,8 +58,6 @@ function App() {
   const [themePreference, setThemePreference] = useState<ThemePreference>(getSavedThemePreference)
   const [systemDarkMode, setSystemDarkMode] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches)
   const darkMode = themePreference === 'system' ? systemDarkMode : themePreference === 'dark'
-  const nextThemePreference: ThemePreference = themePreference === 'system' ? 'light' : themePreference === 'light' ? 'dark' : 'system'
-  const themeLabel = themePreference === 'system' ? `System (${darkMode ? 'dark' : 'light'})` : themePreference === 'dark' ? 'Dark' : 'Light'
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sourceName, setSourceName] = useState('No archive selected')
   const [error, setError] = useState('')
@@ -200,9 +198,7 @@ function App() {
               <span>keepsake<span className="text-terracotta">.</span></span>
             </a>
             {messages.length > 0 && <button className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-xs font-semibold text-muted transition hover:border-terracotta/50 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => fileInputRef.current?.click()}><svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" /></svg>Open file</button>}
-            <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden" onClick={() => setThemePreference(nextThemePreference)} aria-label={`Theme: ${themeLabel}. Switch to ${nextThemePreference} theme`} title={`Theme: ${themeLabel} · Click for ${nextThemePreference}`}>
-              {darkMode ? <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg> : <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>}
-            </button>
+            <ThemeSwitcher className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden" themePreference={themePreference} darkMode={darkMode} onChange={setThemePreference} />
           </div>
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.18em] text-terracotta"><span className="h-px w-6 bg-terracotta/60" />A little place for your words</div>
           <h1 className="mt-5 mb-3 font-serif text-[clamp(2.65rem,4vw,4rem)] leading-[1.03] tracking-[-.055em] text-ink">Some things<br />are worth <em className="font-medium text-terracotta">keeping.</em></h1>
@@ -239,9 +235,7 @@ function App() {
             <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:hidden" onClick={() => fileInputRef.current?.click()} aria-label="Open another chat file" title="Open another chat file">
               <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" /></svg>
             </button>
-            <button className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" onClick={() => setThemePreference(nextThemePreference)} aria-label={`Theme: ${themeLabel}. Switch to ${nextThemePreference} theme`} title={`Theme: ${themeLabel} · Click for ${nextThemePreference}`}>
-              {darkMode ? <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg> : <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>}
-            </button>
+            <ThemeSwitcher className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-paper text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta" themePreference={themePreference} darkMode={darkMode} onChange={setThemePreference} />
             </div>
           </div>
           <div className="flex flex-col gap-2 border-b border-line bg-surface px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -281,9 +275,7 @@ function App() {
         </section>}
         {messages.length === 0 && <section className="flex min-h-[420px] flex-col lg:min-h-[calc(100svh-56px)]" aria-label="Get started">
           <div className="flex justify-end">
-            <button className="hidden size-9 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid" onClick={() => setThemePreference(nextThemePreference)} aria-label={`Theme: ${themeLabel}. Switch to ${nextThemePreference} theme`} title={`Theme: ${themeLabel} · Click for ${nextThemePreference}`}>
-              {darkMode ? <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg> : <svg className="size-4 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>}
-            </button>
+            <ThemeSwitcher className="hidden size-9 shrink-0 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta lg:grid" themePreference={themePreference} darkMode={darkMode} onChange={setThemePreference} />
           </div>
           <div className="flex flex-1 items-center justify-center py-8 lg:py-4">
             <div className="w-full max-w-xl">
@@ -296,6 +288,56 @@ function App() {
       </section>
     </main>
   )
+}
+
+function ThemeSwitcher({ className, themePreference, darkMode, onChange }: { className: string, themePreference: ThemePreference, darkMode: boolean, onChange: (theme: ThemePreference) => void }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [open])
+
+  const buttonTheme = themePreference === 'system' ? (darkMode ? 'dark' : 'light') : themePreference
+
+  return (
+    <div className="relative inline-flex" ref={rootRef}>
+      <button type="button" className={className} onClick={() => setOpen((isOpen) => !isOpen)} aria-label={`Theme: ${themePreference === 'system' ? `System, ${darkMode ? 'dark' : 'light'}` : themePreference}. Choose theme`} aria-haspopup="menu" aria-expanded={open} title="Choose theme">
+        <ThemeOptionIcon theme={buttonTheme} />
+      </button>
+      {open && <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-xl border border-line bg-surface p-1.5 text-ink shadow-xl" role="menu" aria-label="Choose theme">
+        {(['light', 'dark', 'system'] as const).map((theme) => (
+          <button key={theme} type="button" className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm capitalize transition hover:bg-soft focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-terracotta" role="menuitemradio" aria-checked={themePreference === theme} onClick={() => { onChange(theme); setOpen(false) }}>
+            <ThemeOptionIcon theme={theme} />
+            <span className="flex-1">{theme === 'system' ? 'System' : theme}</span>
+            {themePreference === theme && <svg className="size-4 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="m5 12 5 5L20 7" /></svg>}
+          </button>
+        ))}
+      </div>}
+    </div>
+  )
+}
+
+function ThemeOptionIcon({ theme }: { theme: ThemePreference }) {
+  if (theme === 'system') {
+    return <svg className="size-4 shrink-0 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="12" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 20h8m-4-4v4" /></svg>
+  }
+
+  return theme === 'light'
+    ? <svg className="size-4 shrink-0 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path strokeLinecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></svg>
+    : <svg className="size-4 shrink-0 fill-none stroke-current stroke-[1.7]" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z" /></svg>
 }
 
 function MessageRow({ message, participants, measureRef, index, top }: { message: ChatMessage, participants: string[], measureRef: (node: HTMLDivElement | null) => void, index: number, top: number }) {
