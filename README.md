@@ -14,6 +14,7 @@ Keepsake is a small, local conversation archive viewer. Load a JSON export to br
 - Filter by platform and sender, or jump to the first message on a local calendar date. Use **Clear filters** to reset the filters and search.
 - Virtualizes the filtered message list with TanStack Virtual, rendering only nearby rows and measuring messages as they appear. This keeps long archives responsive while supporting messages with different heights.
 - Choose System, Light, or Dark themes. System mode follows your device preference and updates when it changes; Keepsake remembers your setting in this browser.
+- Distinguishes WhatsApp, Instagram, Telegram, Signal, iMessage, and Discord messages with platform-specific bubble colors in both light and dark themes.
 - Shows message dates and times in your browser's local timezone.
 - Runs in the browser; the app does not send archive contents to a server.
 
@@ -47,7 +48,7 @@ type ChatMessage = {
 type ChatFile = ChatMessage[]
 ```
 
-`timestamp`, `sender`, and `message` are required. `platform` is optional and can be any string. The labels `"WhatsApp"`, `"Instagram"`, and `"Telegram"` (case-insensitive) receive distinct background colors. Any other label or an empty value uses the default chat background.
+`timestamp`, `sender`, and `message` are required. `platform` is optional and can be any string. The labels `"WhatsApp"`, `"Instagram"`, `"Telegram"`, `"Signal"`, `"iMessage"`, and `"Discord"` (case-insensitive) receive distinct message bubble colors. Any other label or an empty value uses the default chat background. The included sample conversation contains messages from all six platforms.
 
 ```json
 [

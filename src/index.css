@@ -16,6 +16,9 @@
   --color-sage: #7eaa87;
   --color-lilac: #b47daf;
   --color-telegram: #329bd6;
+  --color-signal: #3a76c4;
+  --color-imessage: #45a96b;
+  --color-discord: #6875d8;
 }
 
 :root {
@@ -44,6 +47,9 @@
   --color-sage: #91b99b;
   --color-lilac: #c49ac1;
   --color-telegram: #63b9ee;
+  --color-signal: #82b5f4;
+  --color-imessage: #79d99b;
+  --color-discord: #a0a9ff;
 }
 
 * { box-sizing: border-box; }
@@ -55,6 +61,13 @@ button { cursor: pointer; }
 
 .filter-control { display: block; }
 .date-filter::-webkit-calendar-picker-indicator { opacity: 0; width: 1rem; height: 1rem; cursor: pointer; }
+
+.message-tone-signal { border-color: #3a76c44d; background-color: #eaf2fc; }
+.message-tone-imessage { border-color: #45a96b4d; background-color: #eaf5ed; }
+.message-tone-discord { border-color: #6875d84d; background-color: #efeffb; }
+[data-theme='dark'] .message-tone-signal { border-color: #82b5f44d; background-color: #263447; }
+[data-theme='dark'] .message-tone-imessage { border-color: #79d99b4d; background-color: #26392d; }
+[data-theme='dark'] .message-tone-discord { border-color: #a0a9ff4d; background-color: #303249; }
 
 .message-list {
   background-color: #fbf8f4;
